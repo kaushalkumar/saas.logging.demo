@@ -1,0 +1,43 @@
+<configuration scan="true">
+	<!-- Dynamic Threshold Filter -->
+	<turboFilter class="ch.qos.logback.classic.turbo.DynamicThresholdFilter">
+		<Key>SUBSCRIBER_MDC_KEY</Key>
+		<DefaultThreshold>DEBUG</DefaultThreshold>
+		<MDCValueLevelPair>
+			<value>SUBSCRIBER_ONE</value>
+			<level>DEBUG</level>
+		</MDCValueLevelPair>
+	</turboFilter>
+
+
+	<appender name="SIFT" class="ch.qos.logback.classic.sift.SiftingAppender">
+		<discriminator>
+			<key>SUBSCRIBER_MDC_KEY</key>
+			<defaultValue>BLANK_SUBSCRIBER</defaultValue>
+		</discriminator>
+		<sift>
+			<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+				<file></file>
+				<!-- In prudent mode, FileAppender will safely write to the specified file, 
+				even in the presence of other FileAppender instances running in different JVMs, 
+				potentially running on different hosts. -->
+				<!-- In prudent mode, file compression is not supported, also file property of FileAppender must be left blank. -->
+				<prudent>true</prudent> 
+				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+					<!-- daily rollover -->
+					<fileNamePattern>/apps/saas/logging/logs/${SUBSCRIBER_MDC_KEY}.%d{yyyy-MM-dd}.log</fileNamePattern>
+					<!-- keep 5 days' worth of history -->
+					<maxHistory>5</maxHistory>
+				</rollingPolicy>
+				<encoder class="saas.logging.demo.SaaSEncoder">
+					<pattern>%d{HH:mm:ss.SSS} | %thread | %-5level | %logger{36} | %M | %L | %msg %nopex%n</pattern>
+					<outputPatternAsHeader>true</outputPatternAsHeader>
+				</encoder>
+			</appender>
+		</sift>
+	</appender>
+
+	<root level="DEBUG">
+		<appender-ref ref="SIFT" />
+	</root>
+</configuration>
