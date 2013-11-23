@@ -9,6 +9,8 @@ import javax.xml.ws.handler.MessageContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import saas.logging.demo.response.ServiceResponse;
+
 /**
  * SaaSLoggingServiceImpl - implementation of SaaSLoggingService. 
  * 
@@ -31,18 +33,23 @@ public class SaaSLoggingServiceImpl implements SaaSLoggingService {
 
 
 	@Override
-	public String fetchGreeting(final String personName, final String subscriberName) {
-		LOG.debug("personName:{}.", personName);
+	public ServiceResponse fetchGreeting(final String personName, final String subscriberName, 
+			final String retrieveLogs) {
+		LOG.debug("Entry personName:{}.", personName);
 		//get Document Model of omApplication xml
 		MessageContext context = this.wsc.getMessageContext();
 		try {
 			Thread.currentThread().sleep(500);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		LOG.info("personName:{}.", personName);
-	    return "Hello " + personName;
+		
+		String result = "Hello " + personName;
+		LOG.info("result:{}.", result);
+		LOG.info("Exit personName:{}.", personName);
+		ServiceResponse response = new ServiceResponse();
+		response.setResponse(result);
+		return response;
 	}
 
 }
