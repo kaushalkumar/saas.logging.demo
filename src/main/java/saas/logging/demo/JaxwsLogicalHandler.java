@@ -1,43 +1,38 @@
 package saas.logging.demo;
 
-import java.io.StringWriter;
-import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.bind.JAXBException;
 import javax.xml.ws.LogicalMessage;
 import javax.xml.ws.handler.LogicalHandler;
 import javax.xml.ws.handler.LogicalMessageContext;
 import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.MessageContext.Scope;
 
 import org.slf4j.MDC;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
-import saas.logging.demo.response.ServiceResponse;
+import saas.logging.demo.jaxws.FetchGreeting;
+import saas.logging.demo.jaxws.FetchGreetingResponse;
+import saas.logging.demo.object.Logs;
+import saas.logging.demo.object.RequestObject;
+import saas.logging.demo.object.ResponseObject;
 
 /**
  * JaxwsLogicalHandler - This class is a Utility Web Service Handler which
  * validates the input parameters.
- * 
- * 
  */
+
+//TODO: handle exception
+
 public class JaxwsLogicalHandler implements
 		LogicalHandler<LogicalMessageContext> {
 
+	private static Map<String, JAXBContext> jaxbContexts = new HashMap<String, JAXBContext>();
 	/**
 	 * Default Constructor.
 	 */
@@ -53,96 +48,61 @@ public class JaxwsLogicalHandler implements
 	 */
 	@Override
 	public boolean handleMessage(LogicalMessageContext messageContext) {
-		Boolean outboundProperty = (Boolean) messageContext
-				.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-
-		Boolean retrieveLogs = false;
+		Boolean outboundProperty = (Boolean) messageContext.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 		
 		if (!outboundProperty.booleanValue()) {
-
-			LogicalMessage lm = messageContext.getMessage();
-			Source payload = lm.getPayload();
-
-			// Process Payload Source
+			Boolean retrieveLogs = false;
 			String subscriber = null;
-			
-			if (payload != null) {
-				Node docNode = getNodeFromSource(payload);
-				//System.out.println(nodeToString(docNode));
-				if (docNode != null) {
-					Node rootNode = docNode.getFirstChild();
-					if (rootNode != null) {
-						NodeList nodeList = rootNode.getChildNodes();
-						for (int counter = 0; counter < nodeList.getLength(); counter++) {
-							Node childNode = nodeList.item(counter);
-							if (childNode.getNodeName()
-									.equals("subscriberName")) {
-								subscriber = childNode.getTextContent();
-								continue;
-							}
-							
-							if (childNode.getNodeName()
-									.equals("retrieveLogs")) {
-								retrieveLogs = Boolean.parseBoolean(childNode.getTextContent());
-								continue;
-							}
-						}
-					}
+			LogicalMessage lm = messageContext.getMessage();
+			FetchGreeting fetchGreeting = (FetchGreeting)lm.getPayload(getJaxbContext(FetchGreeting.class));
+
+			if (fetchGreeting != null) {
+				RequestObject requestObject = fetchGreeting.getRequestObject();
+				if (requestObject != null) {
+					subscriber = requestObject.getSubscriberName();
+					retrieveLogs = requestObject.isRetrieveLogs();
 				}
 			}
 			// set MDC for logging
 			MDC.put("SUBSCRIBER_MDC_KEY", subscriber);
+			
+	        messageContext.put("retrieveLogs", retrieveLogs);
+			messageContext.setScope("retrieveLogs", Scope.HANDLER);
 		}
 		
 		if (outboundProperty.booleanValue()) {
-			
-			LogicalMessage lm = messageContext.getMessage();
-			Source payload = lm.getPayload();
-			
-			// TODO: Need to check how to get request parameter here.
-			/*if (!retrieveLogs) {
-				return true;
-			}*/
-			
+			Boolean retrieveLogs = (Boolean)messageContext.get("retrieveLogs");		
 			String logKey = Thread.currentThread().getName() + "_" + MDC.get("SUBSCRIBER_MDC_KEY");
-			//System.out.println(logKey);
 			Map<String, Stack<String>> saasLogsMap = SaaSEncoder.getSaasLogsMap();
 			Stack<String> logStack = saasLogsMap.get(logKey);
-			//System.out.println("returning");
-
-			// Convert the payload to Document
-			Document document = getDocumentFromSource(payload);
-			// Get the ServiceResponse Element from the response payload
-			Element serviceResponseElement = (Element) document.getFirstChild().getFirstChild();
-			
-			// Unmarshal the Element to JAXB Object of ServiceResponse
-			Unmarshaller unmarshaller = null;
-			ServiceResponse serviceResponse = null;
-			try {
-				unmarshaller = JAXBContext.newInstance(ServiceResponse.class).createUnmarshaller();
-				serviceResponse = (ServiceResponse) unmarshaller.unmarshal(serviceResponseElement);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
+			if (logStack != null) {
+				if (retrieveLogs) {
+					LogicalMessage lm = messageContext.getMessage();
+					FetchGreetingResponse fetchGreetingResponse = (FetchGreetingResponse)lm.getPayload(getJaxbContext(FetchGreetingResponse.class));
+					List<String> logEntry = null;
+					if (fetchGreetingResponse != null) {
+						ResponseObject responseObject = fetchGreetingResponse.getResponseObject();
+						if (responseObject != null) {
+							Logs logs = responseObject.getLogs();
+							if (logs == null) {
+								logs = new Logs();
+								responseObject.setLogs(logs);
+							}
+							logEntry = logs.getLogEntry();
+							if (logEntry == null) {
+								logEntry = new ArrayList<String>();
+							}
+						}
+					}
+					while (!logStack.empty()){
+						logEntry.add(logStack.pop());
+					}
+					lm.setPayload(fetchGreetingResponse, getJaxbContext(FetchGreetingResponse.class));
+				} else {
+					//empty the stack
+					logStack.clear();
+				}
 			}
-
-			for (String log : logStack) {
-				serviceResponse.getLogs().getLogEntry().add(log);
-			}
-			
-			// Marshalling the ServiceResponse object which has the logs back to the document
-			
-			Element parent = (Element) document.getFirstChild();
-			parent.removeChild(serviceResponseElement);
-			 
-			try{
-				 Marshaller marshaller = JAXBContext.newInstance(ServiceResponse.class).createMarshaller();
-				 marshaller.marshal(serviceResponse, parent);
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		
-			DOMSource domSource = new DOMSource(document);
-			lm.setPayload(domSource);
 		
 		}
 		return true;
@@ -170,52 +130,21 @@ public class JaxwsLogicalHandler implements
 	public void close(MessageContext messageContext) {
 	}
 
-	private static Document getDocumentFromSource(Source source) {
-		return (Document) getNodeFromSource(source);
-	}
-	
-	private static Node getNodeFromSource(Source source) {
-		Node node = null;
-		try {
-			DOMResult dom = new DOMResult();
-			Transformer trans = TransformerFactory.newInstance()
-					.newTransformer();
-			trans.transform(source, dom);
-			node = dom.getNode();
-		} catch (TransformerException e) {
-			e.printStackTrace();
-		}
-		return node;
-	}
-	
 	/**
-	 * nodeToString - converts the node into string.
+	 * getJaxbContext - returns the cached JAXBContext for a class.
 	 * 
-	 * @param Node node
-	 * @return String
+	 * @param jaxbContextClass Class
+	 * @return JAXBContext
 	 */
-	public static String nodeToString(Node node) {
-		String xmlString = null;
-		if (node != null) {
-			Writer writer = null;
+	private static JAXBContext getJaxbContext(Class<?> jaxbContextClass) {
+		if (jaxbContexts.get(jaxbContextClass.getName()) == null) {
 			try {
-				// initialize StreamResult with File object to save to file
-				StreamResult result = new StreamResult(new StringWriter());
-				DOMSource source = new DOMSource(node);
-				
-				Transformer transformer = TransformerFactory.newInstance().newTransformer();
-                transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-                transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-                
-				transformer.transform(source, result);
-				writer = result.getWriter();
-				xmlString = writer.toString();
-				
-			} catch (TransformerException e) {
-				throw new RuntimeException(e);
-			} 
+				jaxbContexts.put(jaxbContextClass.getName(),
+						JAXBContext.newInstance(jaxbContextClass));
+			} catch (JAXBException e) {
+				e.printStackTrace();
+			}
 		}
-		return xmlString;
+		return jaxbContexts.get(jaxbContextClass.getName());
 	}
-
 }
