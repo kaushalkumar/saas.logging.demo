@@ -1,15 +1,13 @@
 package saas.logging.demo;
 
-import javax.annotation.Resource;
 import javax.jws.HandlerChain;
 import javax.jws.WebService;
-import javax.xml.ws.WebServiceContext;
-import javax.xml.ws.handler.MessageContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import saas.logging.demo.response.ServiceResponse;
+import saas.logging.demo.object.RequestObject;
+import saas.logging.demo.object.ResponseObject;
 
 /**
  * SaaSLoggingServiceImpl - implementation of SaaSLoggingService. 
@@ -21,8 +19,8 @@ public class SaaSLoggingServiceImpl implements SaaSLoggingService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SaaSLoggingServiceImpl.class);
 	
-	@Resource
-	private WebServiceContext wsc;
+//	@Resource
+//	private WebServiceContext wsc;
 	
 	/**
 	 * SaaSLoggingServiceImpl - Default Constructor.
@@ -33,23 +31,22 @@ public class SaaSLoggingServiceImpl implements SaaSLoggingService {
 
 
 	@Override
-	public ServiceResponse fetchGreeting(final String personName, final String subscriberName, 
-			final String retrieveLogs) {
-		LOG.debug("Entry personName:{}.", personName);
+	public ResponseObject fetchGreeting(RequestObject requestObject) {
+		LOG.debug("Entry personName:{}.", requestObject.getPersonName());
 		//get Document Model of omApplication xml
-		MessageContext context = this.wsc.getMessageContext();
+//		MessageContext context = this.wsc.getMessageContext();
 		try {
-			Thread.currentThread().sleep(500);
+			Thread.sleep(500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		
-		String result = "Hello " + personName;
+		String result = "Hello " + requestObject.getPersonName();
 		LOG.info("result:{}.", result);
-		LOG.info("Exit personName:{}.", personName);
-		ServiceResponse response = new ServiceResponse();
-		response.setResponse(result);
-		return response;
+		LOG.info("Exit personName:{}.", requestObject.getPersonName());
+		ResponseObject responseObject = new ResponseObject();
+		responseObject.setGreeting(result);
+		return responseObject;
 	}
 
 }
