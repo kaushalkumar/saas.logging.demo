@@ -19,9 +19,6 @@ public class SaaSLoggingServiceImpl implements SaaSLoggingService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SaaSLoggingServiceImpl.class);
 	
-//	@Resource
-//	private WebServiceContext wsc;
-	
 	/**
 	 * SaaSLoggingServiceImpl - Default Constructor.
 	 */
@@ -34,13 +31,15 @@ public class SaaSLoggingServiceImpl implements SaaSLoggingService {
 	public ResponseObject fetchGreeting(RequestObject requestObject) {
 		LOG.debug("Entry personName:{}.", requestObject.getPersonName());
 		//get Document Model of omApplication xml
-//		MessageContext context = this.wsc.getMessageContext();
 		try {
 			Thread.sleep(500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 		
+		if("".equals(requestObject.getPersonName())){
+			throw new IllegalArgumentException("Invalid Parameter");
+		}
 		String result = "Hello " + requestObject.getPersonName();
 		LOG.info("result:{}.", result);
 		LOG.info("Exit personName:{}.", requestObject.getPersonName());

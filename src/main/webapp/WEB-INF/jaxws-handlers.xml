@@ -6,5 +6,9 @@
 			<javaee:handler-class>saas.logging.demo.JaxwsLogicalHandler
 			</javaee:handler-class>
 		</javaee:handler>
+		<javaee:handler handler-name="JaxwsSOAPHandler">
+			<javaee:handler-class>saas.logging.demo.JaxwsSOAPHandler
+			</javaee:handler-class>
+		</javaee:handler>		
 	</javaee:handler-chain>
 </javaee:handler-chains>

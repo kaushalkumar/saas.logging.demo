@@ -15,5 +15,4 @@ public interface SaaSLoggingService {
 	@WebResult(name = "responseObject")
 	ResponseObject fetchGreeting(@XmlElement(required = true) @WebParam(name = "requestObject") RequestObject requestObject);
 	
-	
 }
