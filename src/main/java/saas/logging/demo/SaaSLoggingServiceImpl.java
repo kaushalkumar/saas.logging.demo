@@ -29,20 +29,29 @@ public class SaaSLoggingServiceImpl implements SaaSLoggingService {
 
 	@Override
 	public ResponseObject fetchGreeting(RequestObject requestObject) {
+		//logs input
 		LOG.debug("Entry personName:{}.", requestObject.getPersonName());
-		//get Document Model of omApplication xml
+		LOG.debug("Entry personName:{}.", requestObject.getSubscriberName());
+		
+		//current thread sleep to allow other threads to work
 		try {
 			Thread.sleep(500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+		//throwing exception if personName is empty
 		if("".equals(requestObject.getPersonName())){
 			throw new IllegalArgumentException("Invalid Parameter");
 		}
+		
+		//creating result
 		String result = "Hello " + requestObject.getPersonName();
+		
+		//logs at info level
 		LOG.info("result:{}.", result);
 		LOG.info("Exit personName:{}.", requestObject.getPersonName());
+		
+		//set response and return
 		ResponseObject responseObject = new ResponseObject();
 		responseObject.setGreeting(result);
 		return responseObject;
