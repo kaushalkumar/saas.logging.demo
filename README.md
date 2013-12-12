@@ -16,7 +16,7 @@ Project
 -------
 The project consists of a hello world SOAP web service (JAX-WS based). In this project JAX-WS handlers and logback is utilized to achieve logging per request.
 
-<<<URL of blog>>>
+Refer: http://ourworkaround.blogspot.in/2013/12/logging-per-request-without-persistence.html
 
 Build & Deploy
 --------------
