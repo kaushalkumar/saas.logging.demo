@@ -14,7 +14,7 @@ import saas.logging.demo.object.ResponseObject;
  * 
  */
 @WebService(endpointInterface = "saas.logging.demo.SaaSLoggingService")
-@HandlerChain(file = "../../jaxws-handlers.xml")
+@HandlerChain(file = "jaxws-handlers.xml")
 public class SaaSLoggingServiceImpl implements SaaSLoggingService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SaaSLoggingServiceImpl.class);
