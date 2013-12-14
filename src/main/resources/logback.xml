@@ -25,7 +25,7 @@
 				<prudent>true</prudent> 
 				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 					<!-- daily rollover -->
-					<fileNamePattern>/apps/saas/logging/logs/${SUBSCRIBER_MDC_KEY}.%d{yyyy-MM-dd}.log</fileNamePattern>
+					<fileNamePattern>${SUBSCRIBER_MDC_KEY}.%d{yyyy-MM-dd}.log</fileNamePattern>
 					<!-- keep 5 days' worth of history -->
 					<maxHistory>5</maxHistory>
 				</rollingPolicy>
